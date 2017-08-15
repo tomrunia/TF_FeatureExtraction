@@ -16,12 +16,9 @@ from __future__ import absolute_import
 from __future__ import division
 from __future__ import print_function
 
-import utils
-
 import tensorflow as tf
 from nets import nets_factory
 from preprocessing import preprocessing_factory
-from preprocessing import inception_preprocessing
 slim = tf.contrib.slim
 
 
@@ -210,6 +207,14 @@ class FeatureExtractor(object):
         for name, tensor in self._endpoints.items():
             print("{} has shape {}".format(name, tensor.shape))
 
+    def close(self):
+        '''
+        Stop the pre-processing threads and close the session
+        '''
+        self._coord.request_stop()
+        self._coord.join(self._threads)
+        self._sess.close()
+
     @property
     def image_size(self):
         return self._image_size
@@ -217,8 +222,3 @@ class FeatureExtractor(object):
     @property
     def batch_size(self):
         return self._batch_size
-
-    def close(self):
-        self._coord.request_stop()
-        self._coord.join(self._threads)
-        self._sess.close()
