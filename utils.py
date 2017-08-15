@@ -17,6 +17,8 @@ from __future__ import division
 from __future__ import print_function
 
 import os
+import h5py
+import numpy as np
 import matplotlib.pyplot as plt
 from datasets import imagenet
 
@@ -43,6 +45,31 @@ def find_files(paths, extensions, sort=True):
         files.sort()
     return files
 
+def fill_last_batch(image_list, batch_size):
+    '''
+    Fill up the last batch with the last example for the list.
+    Operation is performed in-place.
+
+    :param image_list: list of str, image list to fill up
+    :param batch_size: int, batch_size
+    :return:
+    '''
+    num_examples = len(image_list)
+    num_batches = int(np.ceil(num_examples/batch_size))
+    for i in range((num_batches*batch_size)-num_examples):
+        image_list.append(image_list[-1])
+
+def write_hdf5(filename, layer_names, features):
+    '''
+    Writes features to HDF5 file.
+    :param filename: str, filename to output
+    :param layer_names: list of str, layer names
+    :param features: dict, containing features[layer_names] = vals
+    :return:
+    '''
+    with h5py.File(filename, 'w') as hf:
+        for layer_name in layer_names:
+            hf.create_dataset(layer_name, features[layer_name])
 
 def display_imagenet_prediction(image, class_index):
     class_label = imagenet_classnames[class_index]

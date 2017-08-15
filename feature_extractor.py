@@ -212,6 +212,7 @@ class FeatureExtractor(object):
         Stop the pre-processing threads and close the session
         '''
         self._coord.request_stop()
+        self._sess.run(self._filename_queue.close(cancel_pending_enqueues=True))
         self._coord.join(self._threads)
         self._sess.close()
 

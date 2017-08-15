@@ -18,16 +18,14 @@ from __future__ import print_function
 
 import argparse
 import utils
-import h5py
 import numpy as np
 import time
 from datetime import datetime
-from scipy import misc
 from feature_extractor import FeatureExtractor
 
 
 def feature_extraction_queue(feature_extractor, image_path, layer_names,
-                             batch_size, num_classes, verbose=False):
+                             batch_size, num_classes):
     '''
     <TODO>
 
@@ -41,9 +39,17 @@ def feature_extraction_queue(feature_extractor, image_path, layer_names,
 
     # Add a list of images to process
     image_files = utils.find_files(image_path, ("jpg", "png"))
+    image_files = image_files[0:100]
 
     num_examples = len(image_files)
     num_batches = int(np.ceil(num_examples/batch_size))
+
+    # Fill-up last batch so it is full (otherwise queue hangs)
+    utils.fill_last_batch(image_files, batch_size)
+
+    print("Batch Size: {}".format(batch_size))
+    print("Number of Examples: {}".format(num_examples))
+    print("Number of Batches: {}".format(num_batches))
 
     # Add all the images to the filename queue
     feature_extractor.enqueue_image_files(image_files)
@@ -52,8 +58,9 @@ def feature_extraction_queue(feature_extractor, image_path, layer_names,
     features = {}
     for i, layer_name in enumerate(layer_names):
         layer_shape = feature_extractor.layer_size(layer_name)
-        layer_shape[0] = num_examples  # replace ? by number of examples
+        layer_shape[0] = len(image_files)  # replace ? by number of examples
         features[layer_name] = np.zeros(layer_shape, np.float32)
+        print("Extracting features for layer '{}' with shape {}".format(layer_name, layer_shape))
 
     # Perform feed-forward through the batches
     for batch_index in range(num_batches):
@@ -64,27 +71,27 @@ def feature_extraction_queue(feature_extractor, image_path, layer_names,
         features_batch = feature_extractor.feed_forward_batch(layer_names)
 
         for i, layer_name in enumerate(layer_names):
-
             # Store the features
             start = batch_index*batch_size
             end   = start+batch_size
             features[layer_name][start:end] = features_batch[i]
-
-            if verbose:
-                print("Output of {} has shape: {}".format(
-                    layer_name, features_batch[i].shape))
 
         # Check how many examples are left in the queue
         examples_in_queue = feature_extractor.num_in_queue()
 
         t2 = time.time()
         examples_per_second = batch_size/float(t2-t1)
-        print("[{}] Batch {:05d}/{:05d}, Batch Size = {}, Examples in Queue = {}, Examples/Sec = {:.2f}".format(
+        print("[{}] Batch {:04d}/{:04d}, Batch Size = {}, Examples in Queue = {}, Examples/Sec = {:.2f}".format(
             datetime.now().strftime("%Y-%m-%d %H:%M"), batch_index+1,
             num_batches, batch_size, examples_in_queue, examples_per_second
         ))
 
-    feature_extractor.close()
+    # We cut-off the last part of the final batch since this was filled-up
+    for layer_name in layer_names:
+        features[layer_name] = features[layer_name][0:num_examples]
+
+    return features
+
 
 ################################################################################
 ################################################################################
@@ -118,5 +125,14 @@ if __name__ == "__main__":
     feature_extractor.print_network_summary()
 
     # Feature extraction example using a filename queue to feed images
-    feature_extraction_queue(feature_extractor, args.image_path, layer_names,
-                             args.batch_size, args.num_classes)
+    features = feature_extraction_queue(
+        feature_extractor, args.image_path, layer_names,
+        args.batch_size, args.num_classes)
+
+    # Write features to disk as HDF5 file
+    output_file = "/tmp/TF_feat_extract/features.h5"
+    utils.write_hdf5(output_file, layer_names, features)
+    print("Successfully written features to: {}".format(output_file))
+
+    feature_extractor.close()
+    print("Finished.")
