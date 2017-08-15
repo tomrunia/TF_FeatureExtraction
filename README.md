@@ -1,5 +1,12 @@
 # TensorFlow Feature Extractor
 
+This is a convenient wrapper for feature extraction in TensorFlow. It supports all the pre-trained models on the [tensorflow/models](https://github.com/tensorflow/models/tree/master/slim#pre-trained-models) page. Some of the networks supported are:
+
+* Inception v1-v4
+* ResNet v1 and v2
+* VGG 16-19
+
+
 ## Setup
 
 1. Checkout the TensorFlow `models` repository somewhere on your machine. The path where you checkout the repository will be denoted `<checkout_dir>/models`
