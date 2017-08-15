@@ -47,6 +47,7 @@ def feature_extraction_queue(feature_extractor, image_path, layer_names,
     # Fill-up last batch so it is full (otherwise queue hangs)
     utils.fill_last_batch(image_files, batch_size)
 
+    print("#"*80)
     print("Batch Size: {}".format(batch_size))
     print("Number of Examples: {}".format(num_examples))
     print("Number of Batches: {}".format(num_batches))
@@ -61,6 +62,8 @@ def feature_extraction_queue(feature_extractor, image_path, layer_names,
         layer_shape[0] = len(image_files)  # replace ? by number of examples
         features[layer_name] = np.zeros(layer_shape, np.float32)
         print("Extracting features for layer '{}' with shape {}".format(layer_name, layer_shape))
+
+    print("#"*80)
 
     # Perform feed-forward through the batches
     for batch_index in range(num_batches):
@@ -104,6 +107,7 @@ if __name__ == "__main__":
     parser.add_argument("--network", dest="network_name", type=str, required=True, help="model name, e.g. 'resnet_v2_101'")
     parser.add_argument("--checkpoint", dest="checkpoint", type=str, required=True, help="path to pre-trained checkpoint file")
     parser.add_argument("--image_path", dest="image_path", type=str, required=True, help="path to directory containing images")
+    parser.add_argument("--out_file", dest="out_file", type=str, default="./features.h5", help="path to save features (HDF5 file)")
     parser.add_argument("--layer_names", dest="layer_names", type=str, required=True, help="layer names separated by commas")
     parser.add_argument("--preproc_func", dest="preproc_func", type=str, default=None, help="force the image preprocessing function (None)")
     parser.add_argument("--batch_size", dest="batch_size", type=int, default=64, help="batch size (32)")
@@ -122,7 +126,7 @@ if __name__ == "__main__":
         preproc_func_name=args.preproc_func)
 
     # Print the network summary, use these layer names for feature extraction
-    feature_extractor.print_network_summary()
+    #feature_extractor.print_network_summary()
 
     # Feature extraction example using a filename queue to feed images
     features = feature_extraction_queue(
@@ -130,9 +134,9 @@ if __name__ == "__main__":
         args.batch_size, args.num_classes)
 
     # Write features to disk as HDF5 file
-    output_file = "/tmp/TF_feat_extract/features.h5"
-    utils.write_hdf5(output_file, layer_names, features)
-    print("Successfully written features to: {}".format(output_file))
+    utils.write_hdf5(args.out_file, layer_names, features)
+    print("Successfully written features to: {}".format(args.out_file))
 
+    # Close the threads and close session.
     feature_extractor.close()
     print("Finished.")

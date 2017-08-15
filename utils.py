@@ -69,7 +69,7 @@ def write_hdf5(filename, layer_names, features):
     '''
     with h5py.File(filename, 'w') as hf:
         for layer_name in layer_names:
-            hf.create_dataset(layer_name, features[layer_name])
+            hf.create_dataset(layer_name, data=features[layer_name], dtype=np.float32)
 
 def display_imagenet_prediction(image, class_index):
     class_label = imagenet_classnames[class_index]
