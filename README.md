@@ -1,10 +1,19 @@
 # TensorFlow Feature Extractor
 
-This is a convenient wrapper for feature extraction in TensorFlow. It supports all the pre-trained models on the [tensorflow/models](https://github.com/tensorflow/models/tree/master/slim#pre-trained-models) page. Some of the networks supported are:
+This is a convenient wrapper for **feature extraction** or **classification** in TensorFlow. Given well known pre-trained models on ImageNet, the extractor runs over a list or directory of images. Optionally, features can be saved as HDF5 file. It supports all the [pre-trained models](https://github.com/tensorflow/models/tree/master/slim#pre-trained-models) listed on the official page.
 
-* Inception v1-v4
-* ResNet v1 and v2
-* VGG 16-19
+**TensorFlow models tested:**
+
+1. Inception v1-v4
+2. ResNet v1 and v2
+3. VGG 16-19
+
+## Requirements
+
+* [TensorFlow](https://github.com/tensorflow)
+* [TensorFlow Models](https://github.com/tensorflow/models/)
+* The usual suspects: `numpy`, `scipy`. 
+* Optionally `h5py` for saving features to HDF5 file
 
 
 ## Setup
@@ -15,25 +24,50 @@ This is a convenient wrapper for feature extraction in TensorFlow. It supports a
 git clone https://github.com/tensorflow/models/
 ```  
 
-2. Add the directory `<checkout_dir>/models` to the`$PYTHONPATH` variable. Or add a line to your `.bashrc` file.
+2. Add the directory `<checkout_dir>/models/slim` to the`$PYTHONPATH` variable. Or add a line to your `.bashrc` file.
 
 ```
-export PYTHONPATH="<checkout_dir>/models:$PYTHONPATH"
+export PYTHONPATH="<checkout_dir>/models/slim:$PYTHONPATH"
 ```
 
-## Examples
+3. Download the model checkpoints from the [official page](https://github.com/tensorflow/models/tree/master/slim).
+
+## Usage
+
+There are two example files, one for classification and one for feature extraction.
 
 **ResNet-v1-101**
 ```
-example.py --network resnet_v1_101 --checkpoint /home/trunia1/data/MODELS/TensorFlow/ResNet/resnet_v1_101.ckpt --image_path /home/trunia1/data/SOS/img_pascal/ --num_classes 1000 --layer_names resnet_v1_101/logits
+example_feat_extract.py 
+--network resnet_v1_101 
+--checkpoint ./checkpoints/resnet_v1_101.ckpt 
+--image_path ./images_dir/ 
+--out_file ./features.h5
+--num_classes 1000 
+--layer_names resnet_v1_101/logits
 ```
 
 **ResNet-v2-101**
 ```
-example.py --network resnet_v2_101 --checkpoint /home/trunia1/data/MODELS/TensorFlow/ResNet-v2/resnet_v2_101_2017_04_14/resnet_v2_101.ckpt --image_path /home/trunia1/data/SOS/img_pascal/ --layer_names resnet_v2_101/logits --preproc_func inception
+example_feat_extract.py 
+--network resnet_v2_101 
+--checkpoint ./checkpoints/resnet_v2_101.ckpt 
+--image_path ./images_dir/
+--out_file ./features.h5 
+--layer_names resnet_v2_101/logits 
+--preproc_func inception
 ```
 
 **Inception-v4**
 ```
-example.py --network inception_v4 --checkpoint /home/trunia1/data/MODELS/TensorFlow/Inception/inception_v4.ckpt --image_path /home/trunia1/data/SOS/img_pascal/ --layer_names Logits
+example_feat_extract.py 
+--network inception_v4 
+--checkpoint ./checkpoints/inception_v4.ckpt 
+--image_path /home/trunia1/data/SOS/img_pascal/
+--out_file ./features.h5 
+--layer_names Logits
 ```
+
+## Work in Progress
+
+1. Save image file names to HDF5 file
