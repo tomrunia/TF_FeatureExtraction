@@ -25,9 +25,13 @@ from feature_extractor import FeatureExtractor
 
 
 def feature_extraction_queue(feature_extractor, image_path, layer_names,
-                             batch_size, num_classes):
+                             batch_size, num_classes, num_images=100000):
     '''
-    <TODO>
+    Given a directory containing images, this function extracts features
+    for all images. The layers to extract features from are specified
+    as a list of strings. First, we seek for all images in the directory,
+    sort the list and feed them to the filename queue. Then, batches are
+    processed and features are stored in a large object `features`.
 
     :param feature_extractor: object, TF feature extractor
     :param image_path: str, path to directory containing images
@@ -37,9 +41,10 @@ def feature_extraction_queue(feature_extractor, image_path, layer_names,
     :return:
     '''
 
-    # Add a list of images to process
+    # Add a list of images to process, note that the list is ordered.
     image_files = utils.find_files(image_path, ("jpg", "png"))
-    image_files = image_files[0:100]
+    num_images = min(len(image_files), num_images)
+    image_files = image_files[0:num_images]
 
     num_examples = len(image_files)
     num_batches = int(np.ceil(num_examples/batch_size))

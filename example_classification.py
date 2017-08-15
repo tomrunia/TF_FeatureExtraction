@@ -45,7 +45,7 @@ def classification_queue_input(feature_extractor, image_path, layer_names,
 
     # Push the images through the network
     feature_extractor.enqueue_image_files(image_files)
-    outputs = feature_extractor.feed_forward_batch(layer_names)
+    outputs = feature_extractor.feed_forward_batch(layer_names, fetch_images=True)
 
     # Compute the predictions, note that we asume layer_names[0] corresponds to logits
     predictions = np.squeeze(outputs[0])
@@ -94,7 +94,8 @@ def classification_placeholder_input(feature_extractor, image_path, layer_names,
         batch_images[i] = image
 
     # Push the images through the network
-    outputs = feature_extractor.feed_forward_batch(layer_names, batch_images)
+    outputs = feature_extractor.feed_forward_batch(
+        layer_names, batch_images, fetch_images=True)
 
     # Compute the predictions, note that we asume layer_names[0] corresponds to logits
     predictions = np.squeeze(outputs[0])

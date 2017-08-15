@@ -144,7 +144,7 @@ class FeatureExtractor(object):
         '''
         self._sess.run(self._enqueue_op, feed_dict={self._pl_image_files: image_files})
 
-    def feed_forward_batch(self, layer_names, images=None):
+    def feed_forward_batch(self, layer_names, images=None, fetch_images=False):
         '''
         Main method for pushing a batch of images through the network. There are
         two input options: (1) feeding a list of image filenames to images or (2)
@@ -155,6 +155,7 @@ class FeatureExtractor(object):
 
         :param layer_names: list of str, layer names to extract features from
         :param images: list of str, optional list of image filenames (default=None)
+        :param fetch_images: bool, optionally fetch the input images (default=False)
         :return: list of np.ndarray, list has size +1 compared to layer names.
 
         '''
@@ -176,8 +177,11 @@ class FeatureExtractor(object):
         else:
             feed_dict = None
 
+        # Optionally, we fetch the input image (for debugging/viz)
+        if fetch_images:
+            fetches.append(self._image_batch)
+            
         # Actual forward pass through the network
-        fetches.append(self._image_batch)
         outputs = self._sess.run(fetches, feed_dict=feed_dict)
         return outputs
 
