@@ -18,6 +18,7 @@ from __future__ import print_function
 
 import argparse
 import utils
+import h5py
 import numpy as np
 import time
 from datetime import datetime
@@ -26,7 +27,7 @@ from feature_extractor import FeatureExtractor
 
 
 def feature_extraction_queue(feature_extractor, image_path, layer_names,
-                             batch_size, num_classes):
+                             batch_size, num_classes, verbose=False):
     '''
     <TODO>
 
@@ -40,28 +41,50 @@ def feature_extraction_queue(feature_extractor, image_path, layer_names,
 
     # Add a list of images to process
     image_files = utils.find_files(image_path, ("jpg", "png"))
-    num_image_files = len(image_files)
-    num_batches = np.ceil(num_image_files/batch_size)
+
+    num_examples = len(image_files)
+    num_batches = int(np.ceil(num_examples/batch_size))
 
     # Add all the images to the filename queue
     feature_extractor.enqueue_image_files(image_files)
 
+    # Initialize large data matrix for storing features
+    features = {}
+    for i, layer_name in enumerate(layer_names):
+        layer_shape = feature_extractor.layer_size(layer_name)
+        layer_shape[0] = num_examples  # replace ? by number of examples
+        features[layer_name] = np.zeros(layer_shape, np.float32)
+
+    # Perform feed-forward through the batches
     for batch_index in range(num_batches):
 
         t1 = time.time()
 
         # Feed-forward one batch through the network
-        batch_outputs = feature_extractor.feed_forward_batch(layer_names)
+        features_batch = feature_extractor.feed_forward_batch(layer_names)
 
-        for i, out in enumerate(batch_outputs):
-            print("Output of {} has shape: {}".format(layer_names[i], bo.shape))
+        for i, layer_name in enumerate(layer_names):
+
+            # Store the features
+            start = batch_index*batch_size
+            end   = start+batch_size
+            features[layer_name][start:end] = features_batch[i]
+
+            if verbose:
+                print("Output of {} has shape: {}".format(
+                    layer_name, features_batch[i].shape))
+
+        # Check how many examples are left in the queue
+        examples_in_queue = feature_extractor.num_in_queue()
 
         t2 = time.time()
         examples_per_second = batch_size/float(t2-t1)
-        print("[{}] Batch {:05d}/{:05d}, Batch Size = {}, Examples/Sec = {:.2f}".format(
+        print("[{}] Batch {:05d}/{:05d}, Batch Size = {}, Examples in Queue = {}, Examples/Sec = {:.2f}".format(
             datetime.now().strftime("%Y-%m-%d %H:%M"), batch_index+1,
-            num_batches, batch_size, examples_per_second
+            num_batches, batch_size, examples_in_queue, examples_per_second
         ))
+
+    feature_extractor.close()
 
 ################################################################################
 ################################################################################
@@ -76,7 +99,7 @@ if __name__ == "__main__":
     parser.add_argument("--image_path", dest="image_path", type=str, required=True, help="path to directory containing images")
     parser.add_argument("--layer_names", dest="layer_names", type=str, required=True, help="layer names separated by commas")
     parser.add_argument("--preproc_func", dest="preproc_func", type=str, default=None, help="force the image preprocessing function (None)")
-    parser.add_argument("--batch_size", dest="batch_size", type=int, default=32, help="batch size (32)")
+    parser.add_argument("--batch_size", dest="batch_size", type=int, default=64, help="batch size (32)")
     parser.add_argument("--num_classes", dest="num_classes", type=int, default=1001, help="number of classes (1001)")
     args = parser.parse_args()
 

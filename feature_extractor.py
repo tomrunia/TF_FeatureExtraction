@@ -30,6 +30,27 @@ class FeatureExtractor(object):
     def __init__(self, network_name, checkpoint_path, batch_size, num_classes,
                  image_size=None, preproc_func_name=None, preproc_threads=1):
 
+        '''
+        TensorFlow feature extractor using tf.slim and models/slim.
+        Core functionalities are loading network architecture, pretrained weights,
+        setting up an image pre-processing function, queues for fast input reading.
+        The main workflow after initialization is first loading a list of image
+        files using the `enqueue_image_files` function and then pushing them
+        through the network with `feed_forward_batch`.
+
+        For pre-trained networks and some more explanation, checkout:
+          https://github.com/tensorflow/models/tree/master/slim
+
+        :param network_name: str, network name (e.g. resnet_v1_101)
+        :param checkpoint_path: str, full path to checkpoint file to load
+        :param batch_size: int, batch size
+        :param num_classes: int, number of output classes
+        :param image_size: int, width and height to overrule default_image_size (default=None)
+        :param preproc_func_name: func, optional to overwrite default processing (default=None)
+        :param preproc_threads: int, number of input threads (default=1)
+
+        '''
+
         self._network_name = network_name
         self._checkpoint_path = checkpoint_path
         self._batch_size = batch_size
@@ -90,6 +111,15 @@ class FeatureExtractor(object):
         self._threads = tf.train.start_queue_runners(coord=self._coord, sess=self._sess)
 
     def _preproc_image_batch(self, batch_size, num_threads=1):
+        '''
+        This function is only used for queue input pipeline. It reads a filename
+        from the filename queue, decodes the image, pushes it through a pre-processing
+        function and then uses tf.train.batch to generate batches.
+
+        :param batch_size: int, batch size
+        :param num_threads: int, number of input threads (default=1)
+        :return: tf.Tensor, batch of pre-processed input images
+        '''
 
         if ("resnet_v2" in self._network_name) and (self._preproc_func_name is None):
             raise ValueError("When using ResNet, please perform the pre-processing "
@@ -105,7 +135,9 @@ class FeatureExtractor(object):
         image_preproc_fn = preprocessing_factory.get_preprocessing(preproc_func_name, is_training=False)
         image_preproc = image_preproc_fn(image, self.image_size, self.image_size)
         # Read a batch of preprocessing images from queue
-        image_batch = tf.train.batch([image_preproc], batch_size, num_threads=num_threads)
+        image_batch = tf.train.batch(
+            [image_preproc], batch_size, num_threads=num_threads,
+            allow_smaller_final_batch=True)
         return image_batch
 
     def enqueue_image_files(self, image_files):
@@ -116,6 +148,19 @@ class FeatureExtractor(object):
         self._sess.run(self._enqueue_op, feed_dict={self._pl_image_files: image_files})
 
     def feed_forward_batch(self, layer_names, images=None):
+        '''
+        Main method for pushing a batch of images through the network. There are
+        two input options: (1) feeding a list of image filenames to images or (2)
+        using the file input queue. Which input method to use is determined
+        by whether the `images` parameter is specified. If None, then the queue
+        is used. This function returns a list of outputs of length (len(layer_names)+1).
+        The additional (last) output are the input images.
+
+        :param layer_names: list of str, layer names to extract features from
+        :param images: list of str, optional list of image filenames (default=None)
+        :return: list of np.ndarray, list has size +1 compared to layer names.
+
+        '''
 
         # List of network operations (activations) to fetch
         fetches = []
@@ -140,13 +185,28 @@ class FeatureExtractor(object):
         return outputs
 
     def num_in_queue(self):
+        '''
+        :return: int, returns the current number of examples in the queue
+        '''
         return self._sess.run(self._num_in_queue)
 
     def layer_names(self):
+        '''
+        :return: list of str, layer names in the network
+        '''
         return self._endpoints.keys()
 
+    def layer_size(self, name):
+        '''
+        :param name: str, layer name
+        :return: list of int, shape of the network layer
+        '''
+        return self._endpoints[name].get_shape().as_list()
+
     def print_network_summary(self):
-        # Print all the activation names and their shape
+        '''
+        Prints the network layers and their shapes
+        '''
         for name, tensor in self._endpoints.items():
             print("{} has shape {}".format(name, tensor.shape))
 
