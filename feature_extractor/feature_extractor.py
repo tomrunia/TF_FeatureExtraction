@@ -75,8 +75,8 @@ class FeatureExtractor(object):
         self._num_in_queue = self._filename_queue.size()
 
         # Image reader and preprocessing
-        self._batch_from_queue = self._preproc_image_batch(
-            self._batch_size, num_threads=preproc_threads)
+        self._batch_from_queue, self._batch_filenames = \
+            self._preproc_image_batch(self._batch_size, num_threads=preproc_threads)
 
         # Either use the placeholder as inputs or feed from queue
         self._image_batch = tf.placeholder_with_default(
@@ -125,7 +125,7 @@ class FeatureExtractor(object):
 
         # Read image file from disk and decode JPEG
         reader = tf.WholeFileReader()
-        _, image_raw = reader.read(self._filename_queue)
+        image_filename, image_raw = reader.read(self._filename_queue)
         image = tf.image.decode_jpeg(image_raw, channels=3)
         # Image preprocessing
         preproc_func_name = self._network_name if self._preproc_func_name is None else self._preproc_func_name
@@ -133,7 +133,7 @@ class FeatureExtractor(object):
         image_preproc = image_preproc_fn(image, self.image_size, self.image_size)
         # Read a batch of preprocessing images from queue
         image_batch = tf.train.batch(
-            [image_preproc], batch_size, num_threads=num_threads,
+            [image_preproc, image_filename], batch_size, num_threads=num_threads,
             allow_smaller_final_batch=True)
         return image_batch
 
@@ -150,25 +150,26 @@ class FeatureExtractor(object):
         two input options: (1) feeding a list of image filenames to images or (2)
         using the file input queue. Which input method to use is determined
         by whether the `images` parameter is specified. If None, then the queue
-        is used. This function returns a list of outputs of length (len(layer_names)+1).
-        The additional (last) output are the input images.
+        is used. This function returns a dictionary of outputs in which keys
+        correspond to layer names (and 'filenames' and 'examples_in_queue') and
+        the tensor values.
 
         :param layer_names: list of str, layer names to extract features from
         :param images: list of str, optional list of image filenames (default=None)
         :param fetch_images: bool, optionally fetch the input images (default=False)
-        :return: list of np.ndarray, list has size +1 compared to layer names.
+        :return: dict, dictionary with values for all fetches
 
         '''
 
-        # List of network operations (activations) to fetch
-        fetches = []
+        # Dictionary of network operations (activations) to fetch
+        fetches = {}
 
         # Check if all layers are available
         available_layers = self.layer_names()
         for layer_name in layer_names:
             if layer_name not in available_layers:
                 raise ValueError("Unable to extract features for layer: {}".format(layer_name))
-            fetches.append(self._endpoints[layer_name])
+            fetches[layer_name] = self._endpoints[layer_name]
 
         # Manual inputs using placeholder 'images' of shape [N,H,W,C]
         feed_dict = None
@@ -176,11 +177,15 @@ class FeatureExtractor(object):
             feed_dict = {self._image_batch: images}
         else:
             feed_dict = None
+            fetches["filenames"] = self._batch_filenames
 
         # Optionally, we fetch the input image (for debugging/viz)
         if fetch_images:
-            fetches.append(self._image_batch)
-            
+            fetches["images"] = self._image_batch
+
+        # Fetch how many examples left in queue
+        fetches["examples_in_queue"] = self._num_in_queue
+
         # Actual forward pass through the network
         outputs = self._sess.run(fetches, feed_dict=feed_dict)
         return outputs

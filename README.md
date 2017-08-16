@@ -36,6 +36,8 @@ export PYTHONPATH="<checkout_dir>/models/slim:$PYTHONPATH"
 
 There are two example files, one for classification and one for feature extraction.
 
+### Feature Extraction
+
 **ResNet-v1-101**
 ```
 example_feat_extract.py 
@@ -63,11 +65,23 @@ example_feat_extract.py
 example_feat_extract.py 
 --network inception_v4 
 --checkpoint ./checkpoints/inception_v4.ckpt 
---image_path /home/trunia1/data/SOS/img_pascal/
+--image_path ./images_dir/
 --out_file ./features.h5 
 --layer_names Logits
 ```
 
+### Image Classification
+
+```
+example_classification.py
+--network resnet_v1_101 
+--checkpoint ./checkpoints/resnet_v1_101.ckpt 
+--image_path ./images_dir/
+--num_classes 1000 
+--logits_name resnet_v1_101/logits
+```
+
+
 ## Work in Progress
 
-1. Save image file names to HDF5 file
+1. ~~Save image file names to HDF5 file~~
