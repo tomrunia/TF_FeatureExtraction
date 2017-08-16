@@ -20,7 +20,7 @@ import argparse
 import utils
 import numpy as np
 from scipy import misc
-from feature_extractor import FeatureExtractor
+from feature_extractor.feature_extractor import FeatureExtractor
 
 
 def classification_queue_input(feature_extractor, image_path, layer_names,
