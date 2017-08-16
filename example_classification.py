@@ -24,7 +24,7 @@ from feature_extractor.feature_extractor import FeatureExtractor
 import feature_extractor.utils as utils
 
 
-def classification_queue_input(feature_extractor, image_path, layer_names,
+def classification_queue_input(feature_extractor, image_path, logits_name,
                                batch_size, num_classes):
     '''
     Example function for performing image classification using a pre-trained
@@ -35,7 +35,7 @@ def classification_queue_input(feature_extractor, image_path, layer_names,
 
     :param feature_extractor: object, TF feature extractor
     :param image_path: str, path to directory containing images
-    :param layer_names: list of str, list of layer names (should refer to `logits`)
+    :param logits_name: str, name of logits layer in network
     :param batch_size: int, batch size
     :param num_classes: int, number of classes for ImageNet (1000 or 1001)
     :return:
@@ -46,10 +46,10 @@ def classification_queue_input(feature_extractor, image_path, layer_names,
 
     # Push the images through the network
     feature_extractor.enqueue_image_files(image_files)
-    outputs = feature_extractor.feed_forward_batch(layer_names, fetch_images=True)
+    outputs = feature_extractor.feed_forward_batch([logits_name], fetch_images=True)
 
     # Compute the predictions, note that we asume layer_names[0] corresponds to logits
-    predictions = np.squeeze(outputs[0])
+    predictions = np.squeeze(outputs[logits_name])
     predictions = np.argmax(predictions, axis=1)
 
     for i in range(batch_size):
@@ -58,7 +58,7 @@ def classification_queue_input(feature_extractor, image_path, layer_names,
         utils.display_imagenet_prediction(image, class_index)
 
 
-def classification_placeholder_input(feature_extractor, image_path, layer_names,
+def classification_placeholder_input(feature_extractor, image_path, logits_name,
                                      batch_size, num_classes):
     '''
     Example function for performing image classification using a pre-trained
@@ -69,7 +69,7 @@ def classification_placeholder_input(feature_extractor, image_path, layer_names,
 
     :param feature_extractor: object, TF feature extractor
     :param image_path: str, path to directory containing images
-    :param layer_names: list of str, list of layer names (should refer to `logits`)
+    :param logits_name: str, name of logits layer in network
     :param batch_size: int, batch size
     :param num_classes: int, number of classes for ImageNet (1000 or 1001)
     :return:
@@ -96,10 +96,10 @@ def classification_placeholder_input(feature_extractor, image_path, layer_names,
 
     # Push the images through the network
     outputs = feature_extractor.feed_forward_batch(
-        layer_names, batch_images, fetch_images=True)
+        [logits_name], batch_images, fetch_images=True)
 
     # Compute the predictions, note that we asume layer_names[0] corresponds to logits
-    predictions = np.squeeze(outputs[0])
+    predictions = np.squeeze(outputs[logits_name])
     predictions = np.argmax(predictions, axis=1)
 
     # Display predictions
@@ -120,14 +120,11 @@ if __name__ == "__main__":
     parser.add_argument("--network", dest="network_name", type=str, required=True, help="model name, e.g. 'resnet_v2_101'")
     parser.add_argument("--checkpoint", dest="checkpoint", type=str, required=True, help="path to pre-trained checkpoint file")
     parser.add_argument("--image_path", dest="image_path", type=str, required=True, help="path to directory containing images")
-    parser.add_argument("--layer_names", dest="layer_names", type=str, required=True, help="layer names separated by commas")
+    parser.add_argument("--logits_name", dest="logits_name", type=str, required=True, help="name of logits layer in network")
     parser.add_argument("--preproc_func", dest="preproc_func", type=str, default=None, help="force the image preprocessing function (None)")
     parser.add_argument("--batch_size", dest="batch_size", type=int, default=32, help="batch size (32)")
     parser.add_argument("--num_classes", dest="num_classes", type=int, default=1001, help="number of classes (1001)")
     args = parser.parse_args()
-
-    # resnet_v2_101/logits,resnet_v2_101/pool4 => to list of layer names
-    layer_names = args.layer_names.split(",")
 
     # Initialize the feature extractor
     feature_extractor = FeatureExtractor(
@@ -141,9 +138,11 @@ if __name__ == "__main__":
     feature_extractor.print_network_summary()
 
     # OPTION 1. Test image classification using a filename queue to feed images
-    classification_queue_input(feature_extractor, args.image_path,
-                               layer_names, args.batch_size, args.num_classes)
+    classification_queue_input(
+        feature_extractor, args.image_path, args.logits_name,
+        args.batch_size, args.num_classes)
 
     # OPTION 2. Test image classification by manually feeding images into placeholders
-    classification_placeholder_input(feature_extractor, args.image_path,
-                                     layer_names, args.batch_size, args.num_classes)
+    classification_placeholder_input(
+        feature_extractor, args.image_path, args.logits_name,
+        args.batch_size, args.num_classes)
