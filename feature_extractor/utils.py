@@ -75,9 +75,9 @@ def write_hdf5(filename, layer_names, feature_dataset):
 def display_imagenet_prediction(image, class_index):
     class_label = imagenet_classnames[class_index]
     print("Prediction: {} (class_index={})".format(class_label, class_index))
-    # plt.figure()
-    # plt.imshow(image)
-    # plt.axis('off')
-    # plt.show()
+    plt.figure()
+    plt.imshow(image)
+    plt.axis('off')
+    plt.show()
 
 
