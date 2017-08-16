@@ -17,10 +17,11 @@ from __future__ import division
 from __future__ import print_function
 
 import argparse
-import utils
 import numpy as np
 from scipy import misc
+
 from feature_extractor.feature_extractor import FeatureExtractor
+import feature_extractor.utils as utils
 
 
 def classification_queue_input(feature_extractor, image_path, layer_names,
