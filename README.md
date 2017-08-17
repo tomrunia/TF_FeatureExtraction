@@ -10,7 +10,7 @@ This is a convenient wrapper for **feature extraction** or **classification** in
 
 ## Requirements
 
-* [TensorFlow](https://github.com/tensorflow)
+* [TensorFlow](https://github.com/tensorflow) (tested with version 1.3)
 * [TensorFlow Models](https://github.com/tensorflow/models/)
 * The usual suspects: `numpy`, `scipy`. 
 * Optionally `h5py` for saving features to HDF5 file
