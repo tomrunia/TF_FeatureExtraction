@@ -232,3 +232,7 @@ class FeatureExtractor(object):
     @property
     def batch_size(self):
         return self._batch_size
+
+    @property
+    def num_preproc_threads(self):
+        return self._num_preproc_threads
