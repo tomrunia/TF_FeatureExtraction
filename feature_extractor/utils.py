@@ -59,6 +59,23 @@ def fill_last_batch(image_list, batch_size):
     for i in range((num_batches*batch_size)-num_examples):
         image_list.append(image_list[-1])
 
+def sort_feature_dataset(feature_dataset):
+    '''
+    When more than one preprocessing thread is used the feature_dataset is
+    not sorted according to alphabetical order of filenames. This function
+    sorts the dataset in place so that filenames and corresponding fetaures
+    are sorted by its filename. Note: sorting is in-place.
+
+    :param feature_dataset: dict, containting filenames and all features
+    :return:
+    '''
+    indices = np.argsort(feature_dataset['filenames'])
+    feature_dataset['filenames'].sort()
+    # Apply sorting to features for each image
+    for key in feature_dataset.keys():
+        if key == 'filenames': continue
+        feature_dataset[key] = feature_dataset[key][indices]
+
 def write_hdf5(filename, layer_names, feature_dataset):
     '''
     Writes features to HDF5 file.

@@ -97,6 +97,12 @@ def feature_extraction_queue(feature_extractor, image_path, layer_names,
             num_batches, batch_size, examples_in_queue, examples_per_second
         ))
 
+    # If the number of pre-processing threads >1 then the output order is
+    # non-deterministic. Therefore, we order the outputs again by filenames so
+    # the images and corresponding features are sorted in alphabetical order.
+    if feature_extractor.num_preproc_threads > 1:
+        utils.sort_feature_dataset(feature_dataset)
+
     # We cut-off the last part of the final batch since this was filled-up
     feature_dataset['filenames'] = feature_dataset['filenames'][0:num_examples]
     for layer_name in layer_names:
@@ -119,6 +125,7 @@ if __name__ == "__main__":
     parser.add_argument("--out_file", dest="out_file", type=str, default="./features.h5", help="path to save features (HDF5 file)")
     parser.add_argument("--layer_names", dest="layer_names", type=str, required=True, help="layer names separated by commas")
     parser.add_argument("--preproc_func", dest="preproc_func", type=str, default=None, help="force the image preprocessing function (None)")
+    parser.add_argument("--preproc_threads", dest="num_preproc_threads", type=int, default=2, help="number of preprocessing threads (2)")
     parser.add_argument("--batch_size", dest="batch_size", type=int, default=64, help="batch size (32)")
     parser.add_argument("--num_classes", dest="num_classes", type=int, default=1001, help="number of classes (1001)")
     args = parser.parse_args()
@@ -132,7 +139,9 @@ if __name__ == "__main__":
         checkpoint_path=args.checkpoint,
         batch_size=args.batch_size,
         num_classes=args.num_classes,
-        preproc_func_name=args.preproc_func)
+        preproc_func_name=args.preproc_func,
+        preproc_threads=args.num_preproc_threads
+    )
 
     # Print the network summary, use these layer names for feature extraction
     #feature_extractor.print_network_summary()

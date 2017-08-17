@@ -85,3 +85,4 @@ example_classification.py
 ## Work in Progress
 
 1. ~~Save image file names to HDF5 file~~
+2. ~~Support for multi-threaded preprocessing~~
