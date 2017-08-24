@@ -25,7 +25,7 @@ slim = tf.contrib.slim
 class FeatureExtractor(object):
 
     def __init__(self, network_name, checkpoint_path, batch_size, num_classes,
-                 image_size=None, preproc_func_name=None, preproc_threads=1):
+                 image_size=None, preproc_func_name=None, preproc_threads=2):
 
         '''
         TensorFlow feature extractor using tf.slim and models/slim.
