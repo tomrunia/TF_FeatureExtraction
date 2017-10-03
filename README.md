@@ -1,6 +1,6 @@
 # TensorFlow Feature Extractor
 
-This is a convenient wrapper for **feature extraction** or **classification** in TensorFlow. Given well known pre-trained models on ImageNet, the extractor runs over a list or directory of images. Optionally, features can be saved as HDF5 file. It supports all the [pre-trained models](https://github.com/tensorflow/models/tree/master/slim#pre-trained-models) listed on the official page.
+This is a convenient wrapper for **feature extraction** or **classification** in TensorFlow. Given well known pre-trained models on ImageNet, the extractor runs over a list or directory of images. Optionally, features can be saved as HDF5 file. It supports all the [pre-trained models](https://github.com/tensorflow/models/tree/master/research/slim#pre-trained-models) listed on the official page.
 
 **TensorFlow models tested:**
 
@@ -24,13 +24,13 @@ This is a convenient wrapper for **feature extraction** or **classification** in
 git clone https://github.com/tensorflow/models/
 ```  
 
-2. Add the directory `<checkout_dir>/models/slim` to the`$PYTHONPATH` variable. Or add a line to your `.bashrc` file.
+2. Add the directory `<checkout_dir>/research/slim` to the`$PYTHONPATH` variable. Or add a line to your `.bashrc` file.
 
 ```
-export PYTHONPATH="<checkout_dir>/models/slim:$PYTHONPATH"
+export PYTHONPATH="<checkout_dir>/research/slim:$PYTHONPATH"
 ```
 
-3. Download the model checkpoints from the [official page](https://github.com/tensorflow/models/tree/master/slim).
+3. Download the model checkpoints from the [official page](https://github.com/tensorflow/models/tree/master/research/slim#pre-trained-models).
 
 ## Usage
 
